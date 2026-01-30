@@ -2,32 +2,41 @@
 Copy a folder from Box to OSDF.
 
 Run like:
-  python box_to_osdf.py --box <BOX_FOLDER_URL> --osdf <OSDF_DESTINATION_URL>
+  python box_to_osdf.py --box <BOX_FOLDER_URL> --osdf <OSDF_DESTINATION_URL> > go.sh
+  source go.sh
 
 For example:
-  python box_to_osdf.py --box https://app.box.com/folder/123456 --osdf osdf:///namespace/subdir/
+  python box_to_osdf.py --box https://app.box.com/folder/123456 --osdf osdf:///namespace/subdir/ > go.sh
+  source go.sh
+
+Things to consider for improvements:
+- Walking through Box folder contents recursively instead of downloading everything at once
+- Error handling for Box and pelican commands
+- Especially: Retrying `pelican object sync`
 """
 
 import argparse
-import os
+import time
+NOW = time.strftime("%Y_%m_%d_%Hh%Mm%Ss")
 
 
 def main():
     args = parse_args()
     check_args(args)
-    box_folder_url = args.box
-    osdf_destination_url = args.osdf
+    download_from_box(args.box)
+    upload_to_osdf(args.osdf)
 
-    # Placeholder for Box to OSDF copy logic
-    print(f"Copying from Box folder: {box_folder_url}")
-    print(f"To OSDF destination: {osdf_destination_url}")
 
-    # Here you would add the actual logic to connect to Box,
-    # download the contents of the specified folder, and upload
-    # them to the specified OSDF location.
-    #
-    # This is a placeholder implementation.
-    print("Copy operation completed successfully.")
+def download_from_box(box_folder_url: str):
+    # print(f"NAME=$(box folders:get {folder_id} --json | jq -r '.name')")
+    folder_id = box_folder_url.rstrip("/").split("/")[-1]
+    cmd = f"box folders:download {folder_id} --destination ./{NOW}"
+    print(cmd)
+
+
+def upload_to_osdf(osdf_destination_url: str):
+    cmd = f"pelican object sync ./{NOW} {osdf_destination_url}"
+    print(cmd)
 
 
 def check_args(args: argparse.Namespace):
